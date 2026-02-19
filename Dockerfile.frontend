@@ -1,0 +1,34 @@
+# Stage 1: Build Flutter Web
+FROM ghcr.io/cirruslabs/flutter:stable AS builder
+
+# Install protoc compiler
+RUN apt-get update && apt-get install -y protobuf-compiler && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Copy the entire project context
+COPY . .
+
+# Generate Dart proto files (use compatible version with protobuf ^2.1.0)
+RUN dart pub global activate protoc_plugin 20.0.1
+RUN export PATH="$PATH:$HOME/.pub-cache/bin" && \
+    protoc --dart_out=grpc:frontend/lib/proto -I proto proto/temperature.proto
+
+# Move into the folder where pubspec.yaml and the Flutter project live
+WORKDIR /app/frontend
+
+# Install dependencies and build
+RUN flutter pub get
+RUN flutter build web --release
+
+# Stage 2: Serve with Nginx
+FROM nginx:alpine
+
+# Copy built web app
+COPY --from=builder /app/frontend/build/web /usr/share/nginx/html
+
+# Expose port 80
+EXPOSE 80
+
+# Start nginx
+CMD ["nginx", "-g", "daemon off;"]

@@ -1,0 +1,31 @@
+# Git and build artifacts
+.git
+.gitignore
+*.md
+
+# Frontend build
+frontend/build/
+frontend/.dart_tool/
+frontend/.flutter-plugins
+frontend/.flutter-plugins-dependencies
+frontend/.packages
+
+# Go build
+tempconv-server
+*.exe
+*.test
+*.out
+
+# IDE
+.vscode/
+.idea/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Python (if any test scripts)
+.venv/
+__pycache__/
+*.pyc

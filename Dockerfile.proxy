@@ -1,0 +1,21 @@
+# Build grpcwebproxy
+FROM golang:1.21-alpine AS builder
+
+# Install grpcwebproxy
+RUN go install github.com/improbable-eng/grpc-web/go/grpcwebproxy@latest
+
+# Runtime stage
+FROM alpine:latest
+
+# Copy the binary
+COPY --from=builder /go/bin/grpcwebproxy /usr/local/bin/grpcwebproxy
+
+# Expose HTTP port for grpc-web
+EXPOSE 8081
+
+# Run the proxy
+CMD ["grpcwebproxy", \
+     "--backend_addr=tempconv-backend:50051", \
+     "--run_tls_server=false", \
+     "--allow_all_origins", \
+     "--server_http_debug_port=8081"]
