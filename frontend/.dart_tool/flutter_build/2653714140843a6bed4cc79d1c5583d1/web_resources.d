@@ -1,1 +1,0 @@
- build/web/index.html build/web/manifest.json:  /Users/new/Desktop/TempConv-gRPC/frontend/web/index.html /Users/new/Desktop/TempConv-gRPC/frontend/web/manifest.json
