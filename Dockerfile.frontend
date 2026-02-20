@@ -4,47 +4,43 @@ FROM ghcr.io/cirruslabs/flutter:stable AS builder
 # Install protoc (Protocol Buffers compiler)
 RUN apt-get update && apt-get install -y protobuf-compiler && rm -rf /var/lib/apt/lists/*
 
-# Set working directory
+# Set working directory to the frontend folder
 WORKDIR /app/frontend
 
-# Copy pubspec files
+# 1. Copy pubspec files FIRST to leverage Docker cache
+# Using the path relative to the build context (.)
 COPY frontend/pubspec.yaml frontend/pubspec.lock ./
 
 # Install Dart protoc plugin
 RUN dart pub global activate protoc_plugin 20.0.1
 ENV PATH="$PATH:/root/.pub-cache/bin"
 
-# Create proto output directory
+# 2. Create proto output directory and generate code
 RUN mkdir -p lib/proto
-
-# Copy proto files and generate Dart code
 COPY proto /app/proto
 RUN protoc --proto_path=/app/proto \
     --dart_out=grpc:lib/proto \
     /app/proto/temperature.proto
 
-# Copy the rest of the frontend code
-COPY frontend .
+# 3. Copy the actual frontend source code
+# We copy the contents of the 'frontend' folder into the current WORKDIR (/app/frontend)
+COPY frontend/ .
 
-# Build the Flutter web app with explicit web package version for Flutter 3.41
+# 4. Handle dependencies and version fixes
 RUN flutter clean
 RUN flutter pub get
-RUN flutter pub add 'web:>=0.5.1 <2.0.0'
 
-# Fix CardTheme to CardThemeData for newer Flutter in Cloud Build
-RUN sed -i 's/cardTheme: CardTheme(/cardTheme: const CardThemeData(/g' lib/main.dart && \
-    sed -i 's/borderRadius: BorderRadius.circular(16)/borderRadius: BorderRadius.all(Radius.circular(16))/g' lib/main.dart
+# Force compatible web package and fix Material 3 breaking changes
+RUN flutter pub add 'web:>=0.5.1 <1.0.0'
+RUN sed -i 's/cardTheme: CardTheme(/cardTheme: CardThemeData(/g' lib/main.dart
 
+# 5. Build the Web App
 RUN flutter build web --release
 
 # Stage 2: Serve with Nginx
 FROM nginx:alpine
-
-# Copy built web app
+# Copy from the builder's WORKDIR build output
 COPY --from=builder /app/frontend/build/web /usr/share/nginx/html
 
-# Expose port 80
 EXPOSE 80
-
-# Start nginx
 CMD ["nginx", "-g", "daemon off;"]
