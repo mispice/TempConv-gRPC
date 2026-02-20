@@ -13,10 +13,11 @@ COPY --from=builder /go/bin/grpcwebproxy /usr/local/bin/grpcwebproxy
 # Expose HTTP port for grpc-web
 EXPOSE 8081
 
-# Run the proxy with corrected backend address and explicit CORS headers
+# Run the proxy with corrections for mobile compatibility
 CMD ["grpcwebproxy", \
      "--backend_addr=temp-backend-svc:50051", \
      "--run_tls_server=false", \
      "--allow_all_origins", \
-     "--allowed_headers=keep-alive,user-agent,cache-control,content-type,content-transfer-encoding,x-accept-content-transfer-encoding,x-accept-response-streaming,x-user-agent,x-grpc-web,grpc-timeout", \
+     "--allowed_methods=GET,POST,OPTIONS", \
+     "--allowed_headers=keep-alive,user-agent,cache-control,content-type,content-transfer-encoding,x-accept-content-transfer-encoding,x-accept-response-streaming,x-user-agent,x-grpc-web,grpc-timeout,x-grpc-web-text", \
      "--server_http_debug_port=8081"]
