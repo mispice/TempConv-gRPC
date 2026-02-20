@@ -1,25 +1,28 @@
-# Stage 1: Build Flutter Web
+# Stage 1: Build Flutter web app
 FROM ghcr.io/cirruslabs/flutter:stable AS builder
 
-# Install protoc compiler
-RUN apt-get update && apt-get install -y protobuf-compiler && rm -rf /var/lib/apt/lists/*
-
-WORKDIR /app
-
-# Copy the entire project context
-COPY . .
-
-# Generate Dart proto files (use compatible version with protobuf ^2.1.0)
-RUN dart pub global activate protoc_plugin 20.0.1
-RUN export PATH="$PATH:$HOME/.pub-cache/bin" && \
-    protoc --dart_out=grpc:frontend/lib/proto -I proto proto/temperature.proto
-
-# Move into the folder where pubspec.yaml and the Flutter project live
+# Set working directory
 WORKDIR /app/frontend
 
-# Install dependencies and build
+# Copy pubspec files
+COPY frontend/pubspec.yaml frontend/pubspec.lock ./
+
+# Install Dart protoc plugin
+RUN dart pub global activate protoc_plugin 20.0.1
+
+# Copy proto files and generate Dart code
+COPY proto /app/proto
+RUN protoc --proto_path=/app/proto \
+    --dart_out=grpc:lib/proto \
+    /app/proto/temperature.proto
+
+# Copy the rest of the frontend code
+COPY frontend .
+
+# Build the Flutter web app with explicit web package version for Flutter 3.41
 RUN flutter clean
 RUN flutter pub get
+RUN flutter pub add 'web:>=0.5.1 <2.0.0'
 
 # Fix CardTheme to CardThemeData for newer Flutter in Cloud Build
 RUN sed -i 's/cardTheme: CardTheme(/cardTheme: const CardThemeData(/g' lib/main.dart && \
