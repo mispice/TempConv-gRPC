@@ -1,6 +1,9 @@
 # Stage 1: Build Flutter web app
 FROM ghcr.io/cirruslabs/flutter:stable AS builder
 
+# Install protoc (Protocol Buffers compiler)
+RUN apt-get update && apt-get install -y protobuf-compiler && rm -rf /var/lib/apt/lists/*
+
 # Set working directory
 WORKDIR /app/frontend
 
@@ -9,6 +12,7 @@ COPY frontend/pubspec.yaml frontend/pubspec.lock ./
 
 # Install Dart protoc plugin
 RUN dart pub global activate protoc_plugin 20.0.1
+ENV PATH="$PATH:/root/.pub-cache/bin"
 
 # Copy proto files and generate Dart code
 COPY proto /app/proto
