@@ -8,7 +8,7 @@ RUN apt-get update && apt-get install -y protobuf-compiler && rm -rf /var/lib/ap
 WORKDIR /app/frontend
 
 # 1. Copy pubspec files FIRST to leverage Docker cache
-# Using the path relative to the build context (.)
+# We use the specific path from the context
 COPY frontend/pubspec.yaml frontend/pubspec.lock ./
 
 # Install Dart protoc plugin
@@ -16,6 +16,7 @@ RUN dart pub global activate protoc_plugin 20.0.1
 ENV PATH="$PATH:/root/.pub-cache/bin"
 
 # 2. Create proto output directory and generate code
+# This fixes the "lib/proto: No such file or directory" error
 RUN mkdir -p lib/proto
 COPY proto /app/proto
 RUN protoc --proto_path=/app/proto \
@@ -23,7 +24,7 @@ RUN protoc --proto_path=/app/proto \
     /app/proto/temperature.proto
 
 # 3. Copy the actual frontend source code
-# We copy the contents of the 'frontend' folder into the current WORKDIR (/app/frontend)
+# Ensure the trailing slash to copy contents into WORKDIR
 COPY frontend/ .
 
 # 4. Handle dependencies and version fixes
