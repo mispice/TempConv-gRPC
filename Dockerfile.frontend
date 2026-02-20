@@ -8,7 +8,6 @@ RUN apt-get update && apt-get install -y protobuf-compiler && rm -rf /var/lib/ap
 WORKDIR /app/frontend
 
 # 1. Copy pubspec files FIRST to leverage Docker cache
-# We use the specific path from the context
 COPY frontend/pubspec.yaml frontend/pubspec.lock ./
 
 # Install Dart protoc plugin
@@ -16,7 +15,6 @@ RUN dart pub global activate protoc_plugin 20.0.1
 ENV PATH="$PATH:/root/.pub-cache/bin"
 
 # 2. Create proto output directory and generate code
-# This fixes the "lib/proto: No such file or directory" error
 RUN mkdir -p lib/proto
 COPY proto /app/proto
 RUN protoc --proto_path=/app/proto \
@@ -24,7 +22,6 @@ RUN protoc --proto_path=/app/proto \
     /app/proto/temperature.proto
 
 # 3. Copy the actual frontend source code
-# Ensure the trailing slash to copy contents into WORKDIR
 COPY frontend/ .
 
 # 4. Handle dependencies and version fixes
@@ -35,12 +32,17 @@ RUN flutter pub get
 RUN flutter pub add 'web:>=0.5.1 <1.0.0'
 RUN sed -i 's/cardTheme: CardTheme(/cardTheme: CardThemeData(/g' lib/main.dart
 
-# 5. Build the Web App
-RUN flutter build web --release
+# --- DYNAMIC CONFIGURATION START ---
+# Define the build argument for the Proxy IP
+ARG GRPC_PROXY_URL
+
+# 5. Build the Web App using the dynamic URL
+# This injects the IP into String.fromEnvironment('GRPC_PROXY_URL')
+RUN flutter build web --release --dart-define=GRPC_PROXY_URL=${GRPC_PROXY_URL}
+# --- DYNAMIC CONFIGURATION END ---
 
 # Stage 2: Serve with Nginx
 FROM nginx:alpine
-# Copy from the builder's WORKDIR build output
 COPY --from=builder /app/frontend/build/web /usr/share/nginx/html
 
 EXPOSE 80
