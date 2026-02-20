@@ -14,6 +14,9 @@ COPY frontend/pubspec.yaml frontend/pubspec.lock ./
 RUN dart pub global activate protoc_plugin 20.0.1
 ENV PATH="$PATH:/root/.pub-cache/bin"
 
+# Create proto output directory
+RUN mkdir -p lib/proto
+
 # Copy proto files and generate Dart code
 COPY proto /app/proto
 RUN protoc --proto_path=/app/proto \
