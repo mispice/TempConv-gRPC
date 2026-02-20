@@ -18,7 +18,13 @@ RUN export PATH="$PATH:$HOME/.pub-cache/bin" && \
 WORKDIR /app/frontend
 
 # Install dependencies and build
+RUN flutter clean
 RUN flutter pub get
+
+# Fix CardTheme to CardThemeData for newer Flutter in Cloud Build
+RUN sed -i 's/cardTheme: CardTheme(/cardTheme: const CardThemeData(/g' lib/main.dart && \
+    sed -i 's/borderRadius: BorderRadius.circular(16)/borderRadius: BorderRadius.all(Radius.circular(16))/g' lib/main.dart
+
 RUN flutter build web --release
 
 # Stage 2: Serve with Nginx
