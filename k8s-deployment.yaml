@@ -1,0 +1,125 @@
+# TempConv Backend Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tempconv-backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tempconv-backend
+  template:
+    metadata:
+      labels:
+        app: tempconv-backend
+    spec:
+      containers:
+      - name: tempconv-backend
+        image: gcr.io/PROJECT_ID/tempconv-backend:latest
+        ports:
+        - containerPort: 50051
+        resources:
+          requests:
+            memory: "32Mi"
+            cpu: "25m"
+          limits:
+            memory: "64Mi"
+            cpu: "100m"
+---
+# TempConv Backend Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: tempconv-backend-svc
+spec:
+  selector:
+    app: tempconv-backend
+  ports:
+  - protocol: TCP
+    port: 50051
+    targetPort: 50051
+  type: ClusterIP
+---
+# TempConv Proxy Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tempconv-proxy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tempconv-proxy
+  template:
+    metadata:
+      labels:
+        app: tempconv-proxy
+    spec:
+      containers:
+      - name: tempconv-proxy
+        image: gcr.io/PROJECT_ID/tempconv-proxy:latest
+        ports:
+        - containerPort: 8081
+        resources:
+          requests:
+            memory: "32Mi"
+            cpu: "25m"
+          limits:
+            memory: "64Mi"
+            cpu: "50m"
+---
+# TempConv Proxy Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: tempconv-proxy-svc
+spec:
+  selector:
+    app: tempconv-proxy
+  ports:
+  - protocol: TCP
+    port: 8081
+    targetPort: 8081
+  type: LoadBalancer
+---
+# TempConv Frontend Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tempconv-frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tempconv-frontend
+  template:
+    metadata:
+      labels:
+        app: tempconv-frontend
+    spec:
+      containers:
+      - name: tempconv-frontend
+        image: gcr.io/PROJECT_ID/tempconv-frontend:latest
+        ports:
+        - containerPort: 80
+        resources:
+          requests:
+            memory: "16Mi"
+            cpu: "25m"
+          limits:
+            memory: "32Mi"
+            cpu: "50m"
+---
+# TempConv Frontend Service (LoadBalancer for external access)
+apiVersion: v1
+kind: Service
+metadata:
+  name: tempconv-frontend-svc
+spec:
+  selector:
+    app: tempconv-frontend
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 80
+  type: LoadBalancer

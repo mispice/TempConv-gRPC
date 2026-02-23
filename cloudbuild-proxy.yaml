@@ -1,0 +1,5 @@
+steps:
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['build', '-f', 'Dockerfile.proxy', '-t', 'gcr.io/$PROJECT_ID/tempconv-proxy:latest', '.']
+images:
+- 'gcr.io/$PROJECT_ID/tempconv-proxy:latest'

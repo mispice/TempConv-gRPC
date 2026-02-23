@@ -77,7 +77,10 @@ class _TempConverterHomeState extends State<TempConverterHome> {
   @override
   void initState() {
     super.initState();
-    const proxyUrl = String.fromEnvironment('GRPC_PROXY_URL', defaultValue: 'http://localhost:8081');
+    final currentHost = Uri.base.host;
+    final proxyUrl = currentHost == 'localhost' 
+      ? 'http://localhost:8081' 
+      : 'http://34.31.176.66:8081';
     
     final channel = GrpcWebClientChannel.xhr(Uri.parse(proxyUrl));
     _client = TemperatureConverterClient(channel);

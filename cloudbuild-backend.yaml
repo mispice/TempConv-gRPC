@@ -1,0 +1,5 @@
+steps:
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['build', '-f', 'Dockerfile.backend', '-t', 'gcr.io/$PROJECT_ID/tempconv-backend:latest', '.']
+images:
+- 'gcr.io/$PROJECT_ID/tempconv-backend:latest'
